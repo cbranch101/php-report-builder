@@ -33,7 +33,7 @@
 			
 			$yValues = $params['y_values'];
 			$data = $params['data'];
-			$labelledData = self::labelData($data, $params);
+			$labelledData = self::labelData($data, $params, $yValues);
 			$labels = self::getLabels($labelledData);
 			$groupedData = 
 			self::groupData($labelledData, $labels);
@@ -87,17 +87,22 @@
 		 * @param array $params
 		 * @return array
 		 */
-		static function labelData($data, $params) {
+		static function labelData($data, $params, $yValues) {
 			$labelMap = isset($params['map_labels']) ? $params['map_labels']($data) : null;
-			return __::map($data, function($item) use($params, $labelMap) {
-				$labelId = $params['get_label_id']($item);
-				$label = ChartBuilder::mapLabelId($labelId, $labelMap);
-				ChartBuilder::confirmString($label);
-				$y = $params['get_y']($item);
-				$item['label'] = $label;
-				$item['y'] = $y;
-				return $item;
-			});
+			return __::chain($data)
+				->map(function($item) use($params, $labelMap, $yValues) {
+					$label = $params['get_label']($item);
+					$label = ChartBuilder::mapLabel($label, $labelMap);
+					ChartBuilder::confirmString($label);
+					$y = $params['get_y']($item);
+					if(in_array($y, $yValues)) {
+						$item['label'] = $label;
+						$item['y'] = $y;
+						return $item;
+					}
+				})
+				->compact()
+			->value();
 		}
 		
 		static function getLabels($labelledData) {
@@ -113,11 +118,11 @@
 			}
 		}
 		
-		static function mapLabelId($labelId, $labelMap = null) {
+		static function mapLabel($label, $labelMap = null) {
 			if($labelMap) {
-				return $labelMap[$labelId];				
+				return $labelMap[$label];				
 			} else {
-				return $labelId;
+				return $label;
 			}
 		}
 		
