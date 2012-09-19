@@ -6,19 +6,31 @@
 	class ChartBuilder {
 		
 		static $requiredParams = array(
-			'x',
-			'y',
-			'labels',
+			'y_values',
+			'get_label',
+			'reduce',
+			'get_y',
+			'data',
 		);
 		
-		static $requiredXAndY = array(
-			'gather',
-			'build',
-			'label',
-			'sort',
+		static $requiredReduce = array(
+			'on_first',
+			'on_next',
 		);
 		
+		static $reduceMessages = array(
+			'on_first' => 'Please supply a function to perform on the first item in a reduce',
+			'on_next' => 'Please supply a function to perform on all other items after the first in a reduce',
+		);
 		
+		static $requiredMessages = array(
+			'y_values' => 'Please supply the Y values you want included in the chart',
+			'get_label' => 'Please supply a function to get the label for a row of data',
+			'reduce' => 'Please supply and array of function to specify how to reduce a row of data',
+			'get_y' => 'Please supply a function to get a Y value of an a row of data',
+			'data' => 'Please supply the data you would like to build the chart out of',
+		);
+				
 		/**
 		 * build function.
 		 * 
@@ -30,7 +42,7 @@
 		 * @return array
 		 */
 		static function build($params) {
-			
+			self::confirmParams($params);
 			$yValues = $params['y_values'];
 			$data = $params['data'];
 			$labelledData = self::labelData($data, $params, $yValues);
@@ -142,7 +154,7 @@
 			return __::map($data, function($dataByLabelInY, $y) use($params) {
 				return __::chain($dataByLabelInY)
 					->map(function($dataInLabel, $label) use($params) {
-						$reducedValue =  ChartBuilder::fancyReduce($dataInLabel, $params['reduce']['onFirst'], $params['reduce']['onNext']);
+						$reducedValue =  ChartBuilder::fancyReduce($dataInLabel, $params['reduce']['on_first'], $params['reduce']['on_next']);
 						return array($label => $reducedValue);		
 					})
 					->flatten(true)
@@ -166,6 +178,25 @@
 				return __::groupBy($dataInY, 'label');
 			});
 			return $dataGroupedByYThenByLabel;
+		}
+		
+		static function confirmParams($params) {
+			__::each(self::$requiredParams, function($requiredParam) use($params){
+				if(!isset($params[$requiredParam])) {
+					$output = json_encode($params);
+					$message = "Param '$requiredParam' is missing from $output.";
+					$message .= " " . ChartBuilder::$requiredMessages[$requiredParam];
+					throw new Exception($message);
+				}
+			});
+			__::each(self::$requiredReduce, function($reduceFunction) use($params){
+				if(!isset($params['reduce'][$reduceFunction])) {
+					$output = json_encode($params);
+					$message = "Param '$reduceFunction' in 'reduce' is missing from $output.";
+					$message .= " " . ChartBuilder::$reduceMessages[$reduceFunction];
+					throw new Exception($message);
+				}
+			});
 		}		
 		
 	}
