@@ -26,7 +26,7 @@
 		static $requiredMessages = array(
 			'y_values' => 'Please supply the Y values you want included in the chart',
 			'get_label' => 'Please supply a function to get the label for a row of data',
-			'reduce' => 'Please supply and array of function to specify how to reduce a row of data',
+			'reduce' => 'Please supply and array of functions to specify how to reduce a row of data',
 			'get_y' => 'Please supply a function to get a Y value of an a row of data',
 			'data' => 'Please supply the data you would like to build the chart out of',
 		);
@@ -51,8 +51,7 @@
 			self::groupData($labelledData, $labels);
 			$reducedData = self::reduceData($groupedData, $params);
 			$chart = self::fillOutData($reducedData, $labels, $yValues);
-			return json_encode($chart);
-			
+			return $chart;
 		}
 		
 		/**
@@ -117,6 +116,14 @@
 			->value();
 		}
 		
+		/**
+		 * getLabels function.
+		 * 
+		 * @access public
+		 * @static
+		 * @param array $labelledData
+		 * @return array
+		 */
 		static function getLabels($labelledData) {
 			return __::chain($labelledData)
 				->pluck('label')
@@ -124,12 +131,31 @@
 			->value();
 		}
 		
+		/**
+		 * confirmString function.
+		 * 
+		 * @access public
+		 * @static
+		 * @param string $label
+		 * @return boolean
+		 */
 		static function confirmString($label) {
 			if(!is_string($label)) {
 				throw new Exception("label $label must be a string");
 			}
 		}
 		
+		/**
+		 * mapLabel function.
+		 *
+		 * Map the values supplied in the data to a given label
+		 * 
+		 * @access public
+		 * @static
+		 * @param string $label
+		 * @param array $labelMap (default: null)
+		 * @return string
+		 */
 		static function mapLabel($label, $labelMap = null) {
 			if($labelMap) {
 				return $labelMap[$label];				
